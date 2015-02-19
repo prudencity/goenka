@@ -994,11 +994,6 @@ namespace Finance_Management_System
                 voucherTypeNameNode.AppendChild(doc.CreateTextNode("Payment"));
                 voucherNode.AppendChild(voucherTypeNameNode);
 
-
-                XmlNode voucherNumberNode = doc.CreateElement("VOUCHERNUMBER");
-                voucherNumberNode.AppendChild(doc.CreateTextNode(voucher_number.ToString()));
-                voucherNode.AppendChild(voucherNumberNode);
-
                 XmlNode partyLedgerNameNode = doc.CreateElement("PARTYLEDGERNAME");
                 partyLedgerNameNode.AppendChild(doc.CreateTextNode(dr));
                 voucherNode.AppendChild(partyLedgerNameNode);
@@ -1263,11 +1258,6 @@ WHERE t_cr.id = t_dr.id
                 voucherTypeNameNode.AppendChild(doc.CreateTextNode("Receipt"));
                 voucherNode.AppendChild(voucherTypeNameNode);
 
-
-                XmlNode voucherNumberNode = doc.CreateElement("VOUCHERNUMBER");
-                voucherNumberNode.AppendChild(doc.CreateTextNode(voucher_number.ToString()));
-                voucherNode.AppendChild(voucherNumberNode);
-
                 XmlNode partyLedgerNameNode = doc.CreateElement("PARTYLEDGERNAME");
                 partyLedgerNameNode.AppendChild(doc.CreateTextNode(cr));
                 voucherNode.AppendChild(partyLedgerNameNode);
@@ -1476,11 +1466,6 @@ WHERE t_cr.id = t_dr.id
                 voucherTypeNameNode.AppendChild(doc.CreateTextNode("Journal"));
                 voucherNode.AppendChild(voucherTypeNameNode);
 
-
-                XmlNode voucherNumberNode = doc.CreateElement("VOUCHERNUMBER");
-                voucherNumberNode.AppendChild(doc.CreateTextNode(voucher_number.ToString()));
-                voucherNode.AppendChild(voucherNumberNode);
-
                 XmlNode partyLedgerNameNode = doc.CreateElement("PARTYLEDGERNAME");
                 partyLedgerNameNode.AppendChild(doc.CreateTextNode(dr));
                 voucherNode.AppendChild(partyLedgerNameNode);
@@ -1640,8 +1625,22 @@ WHERE t_cr.id = t_dr.id
                 voucher_number++;
             }
 
-            String S4 = "SELECT 'Interest A/c' as cr, party.P_Name as dr, pmts.Interest as amount, CONVERT(VARCHAR(10), emi.C_Date, 112) as dt from EmiReceived emi, TmpDataCal as pmts, LoanSanction as loan, PartyMaster as party where emi.C_SId = loan.L_Id AND pmts.Id = loan.L_Id AND loan.L_PartyId = party.P_Id  AND emi.C_EMINo = pmts.EMINo AND emi.C_Date in ('" + input_date + "');";
-            DataTable Dt4 = ObjData.GetDataTable(S4);
+
+            String query_InterestAccrual = @"SELECT 'Interest A/c' AS cr
+	,party.P_Name AS dr
+	,(pmts.InterestPer / 100) * emi.C_AmountRec AS amount
+	,CONVERT(VARCHAR(10), emi.C_Date, 112) AS dt
+FROM EmiReceived emi
+	,TmpDataCal AS pmts
+	,LoanSanction AS loan
+	,PartyMaster AS party
+WHERE emi.C_SId = loan.L_Id
+	AND pmts.Id = loan.L_Id
+	AND loan.L_PartyId = party.P_Id
+	AND emi.C_EMINo = pmts.EMINo
+	AND emi.C_Date IN ('" + input_date + "');";
+
+            DataTable Dt4 = ObjData.GetDataTable(query_InterestAccrual);
 
             for (int i = 0; i < Dt4.Rows.Count; i++)
             {
@@ -1687,11 +1686,6 @@ WHERE t_cr.id = t_dr.id
                 XmlNode voucherTypeNameNode = doc.CreateElement("VOUCHERTYPENAME");     //Data Pull
                 voucherTypeNameNode.AppendChild(doc.CreateTextNode("Journal"));
                 voucherNode.AppendChild(voucherTypeNameNode);
-
-
-                XmlNode voucherNumberNode = doc.CreateElement("VOUCHERNUMBER");
-                voucherNumberNode.AppendChild(doc.CreateTextNode(voucher_number.ToString()));
-                voucherNode.AppendChild(voucherNumberNode);
 
                 XmlNode partyLedgerNameNode = doc.CreateElement("PARTYLEDGERNAME");
                 partyLedgerNameNode.AppendChild(doc.CreateTextNode(dr));
@@ -1899,11 +1893,6 @@ WHERE t_cr.id = t_dr.id
                 XmlNode voucherTypeNameNode = doc.CreateElement("VOUCHERTYPENAME");     //Data Pull
                 voucherTypeNameNode.AppendChild(doc.CreateTextNode("Receipt"));
                 voucherNode.AppendChild(voucherTypeNameNode);
-
-
-                XmlNode voucherNumberNode = doc.CreateElement("VOUCHERNUMBER");
-                voucherNumberNode.AppendChild(doc.CreateTextNode(voucher_number.ToString()));
-                voucherNode.AppendChild(voucherNumberNode);
 
                 XmlNode partyLedgerNameNode = doc.CreateElement("PARTYLEDGERNAME");
                 partyLedgerNameNode.AppendChild(doc.CreateTextNode(cr));
