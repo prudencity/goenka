@@ -1,0 +1,3 @@
+SELECT 'Interest A/c' as cr, party.P_Name as dr, pmts.Interest amount, CONVERT(VARCHAR(10), DATEADD(mm, pmts.EMINo-1,loan.L_ApplicableDate), 112) dt from TmpDataCal as pmts, LoanSanction as loan, PartyMaster as party where pmts.Id = loan.L_Id AND loan.L_PartyId = party.P_Id AND DATEADD(mm, pmts.EMINo-1,loan.L_ApplicableDate) in ('20150518') AND
+( NOT EXISTS(SELECT TOP 1 fclose.F_Id FROM AccountForeClosure fclose WHERE fclose.F_SId = loan.L_Id)  OR
+ DATEADD(mm, pmts.EMINo-1,loan.L_ApplicableDate) <= (SELECT fclose.F_Date FROM AccountForeClosure fclose WHERE fclose.F_SId = loan.L_Id));

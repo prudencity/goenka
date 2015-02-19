@@ -1,0 +1,1 @@
+SELECT 'Interest A/C' as cr, party.P_Name as dr, pmts.F_InterestAmount amount, CONVERT(VARCHAR(10), pmts.F_Date, 112) as dt  from AccountForeClosure as pmts, LoanSanction as loan, PartyMaster as party where pmts.F_SId = loan.L_Id AND loan.L_PartyId = party.P_Id AND pmts.F_Date in ('20150515');

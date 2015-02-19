@@ -599,7 +599,7 @@ namespace Finance_Management_System
             {
                 DateTime userEnteredDate = FE.DatePicker.Value;
 
-                String input_date = userEnteredDate.ToString("yyyy-MM-dd");
+                String input_date = userEnteredDate.ToString("yyyyMMdd");
                 Export_Ledgers(input_date);
                 Export_Transactions(input_date);
 
@@ -893,7 +893,7 @@ namespace Finance_Management_System
 
             Dt1.Dispose();
 
-            doc.Save("Ledger-" + input_date + ".xml");
+            doc.Save("D:\\GD\\m-" + input_date);
         }
         #endregion
 
@@ -905,7 +905,8 @@ namespace Finance_Management_System
         #region Export all the Transactions in Tally XML Format
         private void Export_Transactions(String input_date)
         {
-           
+            int voucher_number = Convert.ToInt32(input_date + "1");
+
             XmlDocument doc = new XmlDocument();
             XmlNode docNode = doc.CreateXmlDeclaration("1.0", "UTF-8", null);
             doc.AppendChild(docNode);
@@ -945,7 +946,7 @@ namespace Finance_Management_System
             XmlNode requestDataNode = doc.CreateElement("REQUESTDATA");
             importDataNode.AppendChild(requestDataNode);
 
-            String S1 = "SELECT case when cr ='0' then 'Cash' else cr end as cr, dr, amount, CONVERT(VARCHAR(10), dt, 112) as dt FROM (select l.L_Id as id, ISNULL(p.P_Name,'0') as cr, l.L_LoanAmount as amount, l.L_ApplicableDate as dt from LoanSanction l left outer join  PartyMaster as p on l.L_BankId = p.P_Id) as t_cr, (select l.L_Id as id, p.P_Name as dr from LoanSanction l, PartyMaster as p WHERE l.L_PartyId = p.P_Id) as t_dr where t_cr.id = t_dr.id AND dt in ('" + input_date + "');";
+            String S1 = "SELECT case when cr ='0' then 'Cash' else cr end as cr, dr, amount, CONVERT(VARCHAR(10), dt, 112) as dt FROM (select l.L_Id as id, ISNULL(p.P_Name,'0') as cr, l.L_LoanAmount as amount, l.L_FormDate as dt from LoanSanction l left outer join  PartyMaster as p on l.L_BankId = p.P_Id) as t_cr, (select l.L_Id as id, p.P_Name as dr from LoanSanction l, PartyMaster as p WHERE l.L_PartyId = p.P_Id) as t_dr where t_cr.id = t_dr.id AND dt in ('" + input_date + "');";
             DataTable Dt1 = ObjData.GetDataTable(S1);
 
             for (int i = 0; i < Dt1.Rows.Count; i++)
@@ -995,7 +996,7 @@ namespace Finance_Management_System
 
 
                 XmlNode voucherNumberNode = doc.CreateElement("VOUCHERNUMBER");
-                voucherNumberNode.AppendChild(doc.CreateTextNode(i.ToString()));
+                voucherNumberNode.AppendChild(doc.CreateTextNode(voucher_number.ToString()));
                 voucherNode.AppendChild(voucherNumberNode);
 
                 XmlNode partyLedgerNameNode = doc.CreateElement("PARTYLEDGERNAME");
@@ -1154,10 +1155,52 @@ namespace Finance_Management_System
                 amount1Node.AppendChild(doc.CreateTextNode(amount));
                 allledgerentriesNode1.AppendChild(amount1Node);
 
+                voucher_number++;
+
             }
 
-            String S2 = "SELECT cr, case when dr ='0' then 'Cash' else dr end as dr, amount, CONVERT(VARCHAR(10), dt, 112) as dt  FROM (SELECT emi.C_Id as id, party.P_Name cr, emi.C_AmountRec as amount, emi.C_Date as dt  FROM EMIReceived emi, LoanSanction sanc, LoanApplication app, PartyMaster party  WHERE emi.C_SId = sanc.L_Id and sanc.L_ApplicationId = app.L_Id and app.L_PartyId = party.P_id) as t_cr, (SELECT emi.C_Id as id, ISNULL(party.P_Name,'0') AS dr FROM EMIReceived emi LEFT OUTER JOIN PartyMaster party  on emi.C_BankId = party.P_Id) as t_dr WHERE t_cr.id = t_dr.id AND dt in ('" + input_date + "');";
-            DataTable Dt2 = ObjData.GetDataTable(S2);
+            String query_EMI = @"SELECT cr
+	,CASE 
+		WHEN dr = '0'
+			THEN 'Cash'
+		ELSE dr
+		END AS dr
+	,amount
+	,CONVERT(VARCHAR(10), dt, 112) AS dt
+	,eno
+	,ck_amt
+	,ck_no
+	, party_bank
+	, party_bank_addr
+FROM (
+	SELECT emi.C_Id AS id
+		,party.P_Name cr
+		,emi.C_AmountRec AS amount
+		,emi.C_Date AS dt
+		,EMI.C_EMINo AS eno
+		,cks.S_ChequeDate AS ck_amt
+		,cks.S_ChequeNo   AS ck_no
+		,sanc.L_PartyBank AS party_bank
+		,sanc.L_PartyBankAdd AS party_bank_addr
+	FROM 
+		LoanSanction sanc
+		,LoanApplication app
+		,PartyMaster party
+		, EMIReceived emi LEFT JOIN ChequeDetails as cks ON C_SId = cks.S_Id AND C_EMINo = cks.S_SNo
+	WHERE emi.C_SId = sanc.L_Id
+		AND sanc.L_ApplicationId = app.L_Id
+		AND app.L_PartyId = party.P_id
+	) AS t_cr
+	,(
+		SELECT emi.C_Id AS id
+			,ISNULL(party.P_Name, '0') AS dr
+		FROM EMIReceived emi
+		LEFT JOIN PartyMaster party ON emi.C_BankId = party.P_Id
+		) AS t_dr
+WHERE t_cr.id = t_dr.id
+	AND dt IN ('" + input_date + "');";
+
+            DataTable Dt2 = ObjData.GetDataTable(query_EMI);
 
             for (int i = 0; i < Dt2.Rows.Count; i++)
             {
@@ -1165,6 +1208,22 @@ namespace Finance_Management_System
                 String dr = Dt2.Rows[i]["dr"].ToString();
                 String amount = Dt2.Rows[i]["amount"].ToString();
                 String dt = Dt2.Rows[i]["dt"].ToString();
+                String eno = Dt2.Rows[i]["eno"].ToString();
+                String ck_amt = Dt2.Rows[i]["ck_amt"].ToString();
+                String ck_no = Dt2.Rows[i]["ck_no"].ToString();
+                String party_bank = Dt2.Rows[i]["party_bank"].ToString();
+                String party_bank_addr = Dt2.Rows[i]["party_bank_addr"].ToString();
+
+                String narration;
+
+                if (dr.Equals("Cash"))
+                {
+                    narration = "EMI No. " + eno + " Received from " + cr + " in Cash";
+                }
+                else
+                {
+                    narration = "EMI No. " + eno + " Received from " + cr + " Payment Details: " + ck_amt + " " + ck_no + " " + party_bank + " " + party_bank_addr;
+                }
 
                 String guid = input_date + "-EMI_RECEIVED-" + cr + "-" + dr + "-" + amount + "-" + i.ToString();
 
@@ -1196,7 +1255,7 @@ namespace Finance_Management_System
                 voucherNode.AppendChild(guidNode);
 
                 XmlNode narrationNode = doc.CreateElement("NARRATION");
-                narrationNode.AppendChild(doc.CreateTextNode("EMI Received " + amount + " by " + cr));                  //Data Pull
+                narrationNode.AppendChild(doc.CreateTextNode(narration));                  //Data Pull
                 voucherNode.AppendChild(narrationNode);
 
 
@@ -1206,7 +1265,7 @@ namespace Finance_Management_System
 
 
                 XmlNode voucherNumberNode = doc.CreateElement("VOUCHERNUMBER");
-                voucherNumberNode.AppendChild(doc.CreateTextNode(i.ToString()));
+                voucherNumberNode.AppendChild(doc.CreateTextNode(voucher_number.ToString()));
                 voucherNode.AppendChild(voucherNumberNode);
 
                 XmlNode partyLedgerNameNode = doc.CreateElement("PARTYLEDGERNAME");
@@ -1365,6 +1424,8 @@ namespace Finance_Management_System
                 amount1Node.AppendChild(doc.CreateTextNode("-" + amount));
                 allledgerentriesNode1.AppendChild(amount1Node);
 
+                voucher_number++;
+
             }
 
             String S3 = "SELECT 'Interest A/c' as cr, party.P_Name as dr, pmts.F_InterestAmount amount, CONVERT(VARCHAR(10), pmts.F_Date, 112) as dt  from AccountForeClosure as pmts, LoanSanction as loan, PartyMaster as party where pmts.F_SId = loan.L_Id AND loan.L_PartyId = party.P_Id AND pmts.F_Date in ('" + input_date + "');";
@@ -1417,7 +1478,7 @@ namespace Finance_Management_System
 
 
                 XmlNode voucherNumberNode = doc.CreateElement("VOUCHERNUMBER");
-                voucherNumberNode.AppendChild(doc.CreateTextNode(i.ToString()));
+                voucherNumberNode.AppendChild(doc.CreateTextNode(voucher_number.ToString()));
                 voucherNode.AppendChild(voucherNumberNode);
 
                 XmlNode partyLedgerNameNode = doc.CreateElement("PARTYLEDGERNAME");
@@ -1575,9 +1636,11 @@ namespace Finance_Management_System
                 XmlNode amount1Node = doc.CreateElement("AMOUNT");
                 amount1Node.AppendChild(doc.CreateTextNode(amount));
                 allledgerentriesNode1.AppendChild(amount1Node);
+
+                voucher_number++;
             }
 
-            String S4 = "SELECT 'Interest A/c' as cr, party.P_Name as dr, pmts.Interest amount,CONVERT(VARCHAR(10), loan.L_ApplicableDate, 112) dt from TmpDataCal as pmts, LoanSanction as loan, PartyMaster as party where pmts.Id = loan.L_Id AND loan.L_PartyId = party.P_Id AND DATEADD(mm, pmts.EMINo-1,loan.L_ApplicableDate) in ('" + input_date + "');";
+            String S4 = "SELECT 'Interest A/c' as cr, party.P_Name as dr, pmts.Interest as amount, CONVERT(VARCHAR(10), emi.C_Date, 112) as dt from EmiReceived emi, TmpDataCal as pmts, LoanSanction as loan, PartyMaster as party where emi.C_SId = loan.L_Id AND pmts.Id = loan.L_Id AND loan.L_PartyId = party.P_Id  AND emi.C_EMINo = pmts.EMINo AND emi.C_Date in ('" + input_date + "');";
             DataTable Dt4 = ObjData.GetDataTable(S4);
 
             for (int i = 0; i < Dt4.Rows.Count; i++)
@@ -1627,7 +1690,7 @@ namespace Finance_Management_System
 
 
                 XmlNode voucherNumberNode = doc.CreateElement("VOUCHERNUMBER");
-                voucherNumberNode.AppendChild(doc.CreateTextNode(i.ToString()));
+                voucherNumberNode.AppendChild(doc.CreateTextNode(voucher_number.ToString()));
                 voucherNode.AppendChild(voucherNumberNode);
 
                 XmlNode partyLedgerNameNode = doc.CreateElement("PARTYLEDGERNAME");
@@ -1785,6 +1848,8 @@ namespace Finance_Management_System
                 XmlNode amount1Node = doc.CreateElement("AMOUNT");
                 amount1Node.AppendChild(doc.CreateTextNode(amount));
                 allledgerentriesNode1.AppendChild(amount1Node);
+
+                voucher_number++;
             }
 
             String S5 = "SELECT cr, case when dr ='0' then 'Cash' else dr end as dr, amount, CONVERT(VARCHAR(10), dt, 112) dt  FROM(Select fp.F_Id as id, p.P_Name as cr, (fp.F_Principal + fp.F_InterestAmount + fp.F_Previous) as amount, fp.F_Date as dt from AccountForeClosure as fp, LoanSanction as ls, PartyMaster as p WHERE fp.F_SId = ls.L_Id AND ls.L_PartyId = P.P_Id) as t_cr,(SELECT fp.F_Id as id, ISNULL(party.P_Name,'0') AS dr FROM AccountForeClosure fp LEFT OUTER JOIN PartyMaster party  on fp.F_BankId = party.P_Id) as t_dr WHERE t_cr.id = t_dr.id AND dt in ('" + input_date + "');";
@@ -1837,7 +1902,7 @@ namespace Finance_Management_System
 
 
                 XmlNode voucherNumberNode = doc.CreateElement("VOUCHERNUMBER");
-                voucherNumberNode.AppendChild(doc.CreateTextNode(i.ToString()));
+                voucherNumberNode.AppendChild(doc.CreateTextNode(voucher_number.ToString()));
                 voucherNode.AppendChild(voucherNumberNode);
 
                 XmlNode partyLedgerNameNode = doc.CreateElement("PARTYLEDGERNAME");
@@ -1996,9 +2061,11 @@ namespace Finance_Management_System
                 amount1Node.AppendChild(doc.CreateTextNode("-" + amount));
                 allledgerentriesNode1.AppendChild(amount1Node);
 
+                voucher_number++;
+
             }
 
-            doc.Save("Tx-" + input_date + ".xml");
+            doc.Save("D:\\GD\\v-" + input_date);
 
             Dt1.Dispose();
             Dt2.Dispose();
@@ -2007,5 +2074,15 @@ namespace Finance_Management_System
             Dt5.Dispose();
         }
         #endregion
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label7_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
