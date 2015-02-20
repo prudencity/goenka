@@ -702,7 +702,7 @@ namespace Finance_Management_System
             decimalPlacesForPrintingNode.AppendChild(doc.CreateTextNode(" 2"));
             currencyNode.AppendChild(decimalPlacesForPrintingNode);
 
-            String S1 = "Select * from PartyMaster";
+            String S1 = "select P.P_Name, P.P_Group, AG.ag_name from PartyMaster as P, AccountGroups as AG where AG.ag_code = P.P_Group AND P.P_Name IS NOT NULL AND P.P_Name <> '';";
             DataTable Dt1 = ObjData.GetDataTable(S1);
 
             for (int i = 0; i < Dt1.Rows.Count; i++)
@@ -710,11 +710,7 @@ namespace Finance_Management_System
 
                 String T1 = Dt1.Rows[i]["P_Name"].ToString();
                 String T2 = Dt1.Rows[i]["P_Group"].ToString();
-
-                String S2 = "Select * from AccountGroups where ag_code =" + T2;
-                DataTable Dt2 = GetCode.GetDataTable(S2);
-
-                String T3 = Dt2.Rows[0]["ag_name"].ToString();
+                String T3 = Dt1.Rows[i]["ag_name"].ToString();
 
                 XmlNode tallyMessage1Node = doc.CreateElement("TALLYMESSAGE");
                 XmlAttribute tallyMessage1Attribute = doc.CreateAttribute("xmlns:UDF");
@@ -893,7 +889,7 @@ namespace Finance_Management_System
 
             Dt1.Dispose();
 
-            doc.Save("D:\\GD\\m-" + input_date);
+            doc.Save("C:\\Tally\\m-" + input_date);
         }
         #endregion
 
@@ -953,7 +949,7 @@ namespace Finance_Management_System
             {
                 String cr = Dt1.Rows[i]["cr"].ToString();
                 String dr = Dt1.Rows[i]["dr"].ToString();
-                String amount = Dt1.Rows[i]["amount"].ToString();
+                String amount = Math.Round(Convert.ToDouble(Dt1.Rows[i]["amount"]), 0).ToString(); 
                 String dt = Dt1.Rows[i]["dt"].ToString();
 
                 String guid = input_date + "-DISBURSE-" + cr + "-" + dr + "-" + amount + "-" + i.ToString();            //REMOTEID
@@ -1201,7 +1197,7 @@ WHERE t_cr.id = t_dr.id
             {
                 String cr = Dt2.Rows[i]["cr"].ToString();
                 String dr = Dt2.Rows[i]["dr"].ToString();
-                String amount = Dt2.Rows[i]["amount"].ToString();
+                String amount = Math.Round(Convert.ToDouble(Dt2.Rows[i]["amount"]), 0).ToString(); 
                 String dt = Dt2.Rows[i]["dt"].ToString();
                 String eno = Dt2.Rows[i]["eno"].ToString();
                 String ck_amt = Dt2.Rows[i]["ck_amt"].ToString();
@@ -1425,7 +1421,7 @@ WHERE t_cr.id = t_dr.id
             {
                 String cr = Dt3.Rows[i]["cr"].ToString();
                 String dr = Dt3.Rows[i]["dr"].ToString();
-                String amount = Dt3.Rows[i]["amount"].ToString();
+                String amount = Math.Round(Convert.ToDouble(Dt3.Rows[i]["amount"]), 0).ToString();
                 String dt = Dt3.Rows[i]["dt"].ToString();
 
                 String guid = input_date + "-FORECLOSURE_INTEREST-" + cr + "-" + dr + "-" + amount + "-" + i.ToString();
@@ -1646,7 +1642,7 @@ WHERE emi.C_SId = loan.L_Id
             {
                 String cr = Dt4.Rows[i]["cr"].ToString();
                 String dr = Dt4.Rows[i]["dr"].ToString();
-                String amount = Dt4.Rows[i]["amount"].ToString();
+                String amount = Math.Round(Convert.ToDouble(Dt4.Rows[i]["amount"]), 0).ToString();
                 String dt = Dt4.Rows[i]["dt"].ToString();
 
                 String guid = input_date + "-INTEREST_ACCRUAL-" + cr + "-" + dr + "-" + amount + "-" + i.ToString();
@@ -1853,7 +1849,7 @@ WHERE emi.C_SId = loan.L_Id
             {
                 String cr = Dt5.Rows[i]["cr"].ToString();
                 String dr = Dt5.Rows[i]["dr"].ToString();
-                String amount = Dt5.Rows[i]["amount"].ToString();
+                String amount = Math.Round(Convert.ToDouble(Dt5.Rows[i]["amount"]), 0).ToString();
                 String dt = Dt5.Rows[i]["dt"].ToString();
 
                 String guid = input_date + "-FORECLOSED-" + cr + "-" + dr + "-" + amount + "-" + i.ToString();
@@ -2054,7 +2050,7 @@ WHERE emi.C_SId = loan.L_Id
 
             }
 
-            doc.Save("D:\\GD\\v-" + input_date);
+            doc.Save("C:\\Tally\\v-" + input_date);
 
             Dt1.Dispose();
             Dt2.Dispose();
